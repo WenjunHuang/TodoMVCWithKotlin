@@ -12,30 +12,34 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.key.*
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.github.wenjun.todomvc.repository.DefaultTodoRepository
+import com.github.wenjun.todomvc.repository.SearchFilter
+import com.github.wenjun.todomvc.repository.TodoRepository
+import kotlinx.coroutines.launch
 
 val testData = listOf(
-    Todo("Go Shopping", true),
-    Todo("Refactor Backend", false),
-    Todo("Add new feature to frontend", true),
-    Todo("Go Shopping", true),
-    Todo("Refactor Backend", false),
-    Todo("Add new feature to frontend", true),
-    Todo("Add new feature to frontend", true),
-    Todo("Go Shopping", true),
-    Todo("Refactor Backend", false),
+    Todo("1", "Go Shopping", true),
+    Todo("2", "Refactor Backend", false),
+    Todo("3", "Add new feature to frontend", true),
+    Todo("4", "Go Shopping", true),
+    Todo("5", "Refactor Backend", false),
+    Todo("6", "Add new feature to frontend", true),
+    Todo("7", "Add new feature to frontend", true),
+    Todo("8", "Go Shopping", true),
+    Todo("9", "Refactor Backend", false),
 )
 
 @Composable
 fun Item(modifier: Modifier = Modifier, todo: Todo) {
+    val scope = rememberCoroutineScope()
     Box(modifier = modifier) {
         Row(
             horizontalArrangement = Arrangement.Start,
@@ -45,34 +49,39 @@ fun Item(modifier: Modifier = Modifier, todo: Todo) {
                 modifier = Modifier
                     .requiredSize(width = 32.dp, height = 32.dp)
                     .border(
-                        border = BorderStroke(1.dp, Styles.BorderHintColor),
+                        border = BorderStroke(1.dp, styles.BorderHintColor),
                         shape = CircleShape
                     ).clickable {
-                                println("clicked")
+                        scope.launch {
+                            repository.setTodoState(todo.id, !todo.active)
+                        }
                     },
                 contentAlignment = Alignment.Center,
 
-            ) {
+                ) {
                 if (!todo.active)
                     Icon(
                         Icons.Rounded.Check, contentDescription = null,
                         modifier = Modifier.size(width = 24.dp, height = 24.dp),
-                        tint = Styles.SecondaryColor
+                        tint = styles.SecondaryColor
                     )
             }
             Spacer(Modifier.width(16.dp))
+
             Text(
                 todo.text,
-                style = if (todo.active) Styles.ActiveItemTextStyle else Styles.CompletedItemTextStyle,
+                style = if (todo.active) styles.ActiveItemTextStyle else styles.CompletedItemTextStyle,
                 modifier = Modifier.weight(1f),
+                textDecoration = if (todo.active) TextDecoration.None else TextDecoration.LineThrough
             )
         }
     }
 }
 
 @Composable
-fun CreateNewTodo() {
+fun CreateNewTodo(repository: TodoRepository) {
     var newItem by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
@@ -80,18 +89,30 @@ fun CreateNewTodo() {
         Icon(
             Icons.Rounded.KeyboardArrowDown, contentDescription = null,
             modifier = Modifier.size(width = 64.dp, height = 64.dp),
-            tint = Styles.BorderHintColor
+            tint = styles.BorderHintColor
         )
         TextField(
             newItem, onValueChange = {
                 newItem = it
             },
-            modifier = Modifier.weight(1f),
-            textStyle = Styles.CreateItemTextStyle,
+            modifier = Modifier.weight(1f).onPreviewKeyEvent {
+                when {
+                    it.key == Key.Enter && it.type == KeyEventType.KeyDown -> {
+                        val value = newItem
+                        newItem = ""
+                        scope.launch {
+                            repository.createNewTodo(value)
+                        }
+                        true
+                    }
+                    else -> false
+                }
+            },
+            textStyle = styles.CreateItemTextStyle,
             placeholder = {
                 Text(
                     "What needs to be done?",
-                    style = Styles.CreateItemHintTextStyle
+                    style = styles.CreateItemHintTextStyle
                 )
             },
             singleLine = true,
@@ -106,24 +127,26 @@ fun CreateNewTodo() {
 }
 
 @Composable
-fun ItemsBody(modifier: Modifier) {
+fun ItemsBody(modifier: Modifier, store: List<Todo>) {
     Box(modifier = modifier) {
         val listState = rememberLazyListState()
 
-        LazyColumn(state =listState) {
-            itemsIndexed(testData) { index, todo ->
-                Item(
-                    modifier = Modifier.padding(
-                        start = 24.dp,
-                        top = 8.dp,
-                        end = 8.dp,
-                        bottom = 8.dp
+        LazyColumn(state = listState) {
+            itemsIndexed(store) { index, todo ->
+                key(todo.id) {
+                    Item(
+                        modifier = Modifier.padding(
+                            start = 24.dp,
+                            top = 8.dp,
+                            end = 8.dp,
+                            bottom = 8.dp
+                        )
+                            .fillMaxWidth(),
+                        todo
                     )
-                        .fillMaxWidth(),
-                    todo
-                )
+                }
                 if (index != testData.size - 1)
-                    Divider(color = Styles.BorderHintColor, thickness = 1.dp)
+                    Divider(color = styles.BorderHintColor, thickness = 1.dp)
             }
         }
         VerticalScrollbar(
@@ -138,51 +161,73 @@ fun ItemsBody(modifier: Modifier) {
 }
 
 @Composable
-fun StatusBarFilterButton(name: String, selected: Boolean) {
+fun StatusBarFilterButton(name: String, selected: Boolean, onClicked: () -> Unit) {
     Box(
         modifier = (if (selected) Modifier.border(
-            1.dp, color = Styles.BorderHintColor,
+            1.dp, color = styles.BorderHintColor,
             shape = RoundedCornerShape(3.dp)
         ) else Modifier).padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(onClick = onClicked)
     ) {
         Text(
             name,
-            style = Styles.StatusTextStyle,
-            color = Styles.StatusColor
+            style = styles.StatusTextStyle,
+            color = styles.StatusColor
         )
     }
 }
 
 @Composable
-fun StatusBar(modifier: Modifier = Modifier) {
+fun StatusBar(repository: TodoRepository, modifier: Modifier = Modifier) {
+    val filterState by repository.filterState()
+    val store by repository.storeState()
+    val scope = rememberCoroutineScope()
     Box(modifier = Modifier.padding(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "3 items left",
-                style = Styles.StatusTextStyle,
-                color = Styles.StatusColor
+                style = styles.StatusTextStyle,
+                color = styles.StatusColor
             )
             Row(
                 modifier = Modifier.weight(2f)
             ) {
                 Spacer(modifier = modifier.weight(1f))
-                StatusBarFilterButton("All", true)
+                StatusBarFilterButton("All", filterState == SearchFilter.All,
+                    onClicked = {
+                        scope.launch {
+                            repository.setFilter(SearchFilter.All)
+                        }
+                    })
                 Spacer(modifier = modifier.width(8.dp))
-                StatusBarFilterButton("Active", false)
+                StatusBarFilterButton("Active", filterState == SearchFilter.Active,
+                    onClicked = {
+                        scope.launch {
+                            repository.setFilter(SearchFilter.Active)
+                        }
+                    }
+                )
                 Spacer(modifier = modifier.width(8.dp))
-                StatusBarFilterButton("Completed", false)
+                StatusBarFilterButton("Finished", filterState == SearchFilter.Finished,
+                    onClicked = {
+                        scope.launch {
+                            repository.setFilter(SearchFilter.Finished)
+                        }
+                    })
             }
             Spacer(modifier = modifier.weight(1f))
         }
     }
 }
 
+val repository = DefaultTodoRepository()
+
 fun main() = Window(title = "TodoMVC") {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .background(Styles.BackgroundColor)
+            .background(styles.BackgroundColor)
     ) {
         Column(
             Modifier.fillMaxWidth()
@@ -190,7 +235,7 @@ fun main() = Window(title = "TodoMVC") {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(modifier = Modifier.padding(bottom = 16.dp)) {
-                Text("todos", style = Styles.TitleTextStyle)
+                Text("todos", style = styles.TitleTextStyle)
             }
             Surface(
                 modifier = Modifier
@@ -205,17 +250,19 @@ fun main() = Window(title = "TodoMVC") {
                     Modifier.fillMaxHeight(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CreateNewTodo()
+                    CreateNewTodo(repository)
                     Divider(
-                        color = Styles.BorderHintColor,
+                        color = styles.BorderHintColor,
                         thickness = 1.dp
                     )
-                    ItemsBody(modifier = Modifier.fillMaxWidth().weight(1f))
+                    val store by repository.storeState()
+                    ItemsBody(modifier = Modifier.fillMaxWidth().weight(1f), store)
                     Divider(
-                        color = Styles.BorderHintColor,
+                        color = styles.BorderHintColor,
                         thickness = 1.dp
                     )
-                    StatusBar()
+
+                    StatusBar(repository)
                 }
             }
         }

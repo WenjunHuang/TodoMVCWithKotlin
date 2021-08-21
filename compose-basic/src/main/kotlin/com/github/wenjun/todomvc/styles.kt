@@ -9,7 +9,7 @@ import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
-object Styles {
+object styles {
     val PrimaryColor = Color(0xFFAF2F2F)
     val SecondaryColor = Color(0xFF2FAFAF)
     val HoverColor = Color(0xFFD15555)
@@ -19,7 +19,7 @@ object Styles {
     val StatusColor = Color(0xFF676363)
     val BackgroundColor = Color(0xFFE5E5E5)
 
-    val fonts = FontFamily(
+    private val fonts = FontFamily(
         Font("fonts/NotoSansSC-Bold.otf", weight = FontWeight.Bold),
         Font("fonts/NotoSansSC-Regular.otf", weight = FontWeight.Normal),
         Font("fonts/NotoSansSC-Regular.otf", weight = FontWeight.Normal, style = FontStyle.Italic)
