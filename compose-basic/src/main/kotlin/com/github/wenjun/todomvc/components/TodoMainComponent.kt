@@ -1,8 +1,6 @@
 package com.github.wenjun.todomvc.components
 
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.decompose.instancekeeper.getOrCreate
-import com.arkivanov.decompose.value.Value
 import com.github.wenjun.todomvc.Todo
 
 

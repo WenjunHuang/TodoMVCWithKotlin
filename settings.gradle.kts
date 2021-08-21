@@ -6,4 +6,4 @@ pluginManagement {
     
 }
 rootProject.name = "TodoMVC"
-
+include("compose-basic")
