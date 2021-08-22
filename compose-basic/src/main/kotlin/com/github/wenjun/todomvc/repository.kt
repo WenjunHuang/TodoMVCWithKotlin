@@ -43,7 +43,8 @@ class DefaultTodoRepository : TodoRepository {
         when (val idx = store.indexOfFirst { it.id == id }) {
             -1 -> return
             else -> {
-                store = store.set(idx, store[idx].copy(active = active))
+                val changed = store[idx].copy(active = active)
+                store = store.set(idx, changed)
                 storeChanged()
             }
         }

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
@@ -25,17 +26,17 @@ import com.github.wenjun.todomvc.repository.SearchFilter
 import com.github.wenjun.todomvc.repository.TodoRepository
 import kotlinx.coroutines.launch
 
-val testData = listOf(
-    Todo("1", "Go Shopping", true),
-    Todo("2", "Refactor Backend", false),
-    Todo("3", "Add new feature to frontend", true),
-    Todo("4", "Go Shopping", true),
-    Todo("5", "Refactor Backend", false),
-    Todo("6", "Add new feature to frontend", true),
-    Todo("7", "Add new feature to frontend", true),
-    Todo("8", "Go Shopping", true),
-    Todo("9", "Refactor Backend", false),
-)
+//val testData = listOf(
+//    Todo("1", "Go Shopping", true),
+//    Todo("2", "Refactor Backend", false),
+//    Todo("3", "Add new feature to frontend", true),
+//    Todo("4", "Go Shopping", true),
+//    Todo("5", "Refactor Backend", false),
+//    Todo("6", "Add new feature to frontend", true),
+//    Todo("7", "Add new feature to frontend", true),
+//    Todo("8", "Go Shopping", true),
+//    Todo("9", "Refactor Backend", false),
+//)
 
 @Composable
 fun Item(modifier: Modifier = Modifier, todo: Todo) {
@@ -79,6 +80,7 @@ fun Item(modifier: Modifier = Modifier, todo: Todo) {
 }
 
 @Composable
+@OptIn(ExperimentalComposeUiApi::class)
 fun CreateNewTodo(repository: TodoRepository) {
     var newItem by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
@@ -145,7 +147,7 @@ fun ItemsBody(modifier: Modifier, store: List<Todo>) {
                         todo
                     )
                 }
-                if (index != testData.size - 1)
+                if (index != store.size - 1)
                     Divider(color = styles.BorderHintColor, thickness = 1.dp)
             }
         }
